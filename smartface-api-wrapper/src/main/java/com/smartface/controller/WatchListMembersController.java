@@ -34,14 +34,14 @@ public class WatchListMembersController {
 	
 	@PostMapping("/fetch")
 	public ResponseEntity<?> fetchWatchlistMembersById(@RequestBody WatchListMembersRequest request) {
-	    if (request == null || request.getId() == null) {
+	    if (request == null || request.getWatchlistId() == null) {
 	        ApiResponse<?> response = new ApiResponse<>("Bad Request", null, HttpStatus.BAD_REQUEST.value());
 	        return ResponseEntity.badRequest().body(response);
 	    }
 
 	    try {
 	        String membersUrl = smartfaceProperties.getBaseurl() +
-	            "Watchlists/" + request.getId() +
+	            "Watchlists/" + request.getWatchlistId() +
 	            "/WatchlistMembers?Ascending=true&PageNumber=1&PageSize=" +
 	            smartfaceProperties.getDefaultPageSize() +
 	            "&ShowTotalCount=true";

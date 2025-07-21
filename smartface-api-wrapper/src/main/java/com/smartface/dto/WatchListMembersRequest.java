@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class WatchListMembersRequest {
 
-	private String id;
+	private String watchlistId;
 }
