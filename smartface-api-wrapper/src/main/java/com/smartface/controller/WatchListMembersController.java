@@ -97,7 +97,7 @@ public class WatchListMembersController {
 	        String imageUrl = smartfaceProperties.getBaseurl() + "Images/" + imageDataId;
 	        return restTemplate.getForObject(imageUrl, byte[].class);
 	    } catch (Exception e) {
-	        return null;
+	        return new byte[0];
 	    }
 	}
 

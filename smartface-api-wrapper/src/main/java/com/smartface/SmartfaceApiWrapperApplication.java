@@ -13,24 +13,22 @@ public class SmartfaceApiWrapperApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(SmartfaceApiWrapperApplication.class, args);
 	}
-	
+
 	@Bean
 	public RestTemplate restTemplae() {
 		return new RestTemplate();
 	}
+
+	@Bean
+	public WebMvcConfigurer corsConfigurer() {
+		return new WebMvcConfigurer() {
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				registry.addMapping("/**").allowedOrigins("*").allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+						.allowedHeaders("*").allowCredentials(false);
+			}
+		};
+	}
 	
-	 @Bean
-	    public WebMvcConfigurer corsConfigurer() {
-	        return new WebMvcConfigurer() {
-	            @Override
-	            public void addCorsMappings(CorsRegistry registry) {
-	                registry.addMapping("/**") 
-	                        .allowedOrigins("*") 
-	                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-	                        .allowedHeaders("*") 
-	                        .allowCredentials(false);
-	            }
-	        };
-	    }
 
 }
