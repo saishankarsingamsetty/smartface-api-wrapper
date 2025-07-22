@@ -1,7 +1,12 @@
 package com.smartface.controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,8 +17,12 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateWatchListDTO;
+import com.smartface.dto.CreateWatchListMemberDTO;
+import com.smartface.exception.SmartfaceException;
 import com.smartface.response.ApiResponse;
 
 import jakarta.validation.Valid;
@@ -63,45 +72,125 @@ public class WatchListController {
 		}
 
 	}
-	
+
 	@PostMapping("/create")
 	public ResponseEntity<?> createWatchList(@Valid @RequestBody CreateWatchListDTO createWatchListDTO) {
-	    try {
-	        String url = smartfaceProperties.getBaseurl() + "Watchlists";
 
-	        ResponseEntity<?> response = restTemplate.postForEntity(url, createWatchListDTO, Object.class);
+		try {
+			String url = smartfaceProperties.getBaseurl() + "Watchlists";
 
-	        ApiResponse<?> apiResponse = new ApiResponse<>(
-	                "Watchlist was created successfully",
-	                response.getBody(),
-	                response.getStatusCodeValue()
-	        );
-	        return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
+			ResponseEntity<?> response = restTemplate.postForEntity(url, createWatchListDTO, Object.class);
 
-	    } catch (HttpClientErrorException e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Client error",
-	                e.getResponseBodyAsString(),
-	                e.getStatusCode().value()
-	        );
-	        return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+			ApiResponse<?> apiResponse = new ApiResponse<>("Watchlist was created successfully", response.getBody(),
+					response.getStatusCodeValue());
+			return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
 
-	    } catch (HttpServerErrorException e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Server error",
-	                e.getResponseBodyAsString(),
-	                e.getStatusCode().value()
-	        );
-	        return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+		} catch (HttpClientErrorException e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Client error", e.getResponseBodyAsString(),
+					e.getStatusCode().value());
+			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
 
-	    } catch (Exception e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Unexpected error: " + e.getMessage(),
-	                null,
-	                HttpStatus.INTERNAL_SERVER_ERROR.value()
-	        );
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-	    }
+		} catch (HttpServerErrorException e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Server error", e.getResponseBodyAsString(),
+					e.getStatusCode().value());
+			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+
+		} catch (Exception e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Unexpected error: " + e.getMessage(), null,
+					HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+		}
+	}
+
+	@PostMapping("/addMember")
+	public ResponseEntity<?> addWatchListMember(@RequestBody CreateWatchListMemberDTO createWatchListMemberDTO)
+			throws SmartfaceException {
+
+		try {
+			String id = getWatchListMemberId(createWatchListMemberDTO);
+
+			System.out.println(id);
+			boolean isLinked = linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(), id);
+
+			System.out.println("isLinked: " + isLinked);
+			if (!isLinked) {
+				throw new SmartfaceException("Failed to link watchlist member to watchlist",
+						HttpStatus.INTERNAL_SERVER_ERROR.value());
+			}
+			ApiResponse<String> apiResponse = new ApiResponse<>("Watchlist member was added successfully", id,
+					HttpStatus.CREATED.value());
+			return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+		} catch (Exception e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Error while adding member: " + e.getMessage(), null,
+					HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+		}
+	}
+
+	public String getWatchListMemberId(CreateWatchListMemberDTO createWatchListMemberDTO) throws SmartfaceException {
+		try {
+
+			String url = smartfaceProperties.getBaseurl() + "WatchlistMembers";
+
+			ResponseEntity response = restTemplate.postForEntity(url, createWatchListMemberDTO, Object.class);
+
+			if (response.getStatusCode() == HttpStatus.CREATED) {
+				Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+				return (String) responseBody.get("id");
+			} else {
+				throw new SmartfaceException("Failed to create watchlist member", response.getStatusCodeValue());
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null; // Handle exceptions as needed
+		}
+	}
+
+	public boolean linkWatchListMemberToWatchList(String watchListId, String watchListMemberId)
+			throws SmartfaceException {
+		try {
+			String url = smartfaceProperties.getBaseurl() + "/WatchlistMembers/LinkToWatchlist";
+
+			String body = """
+					{
+					    "watchlistId": "%s",
+					    "watchlistMembersIds": ["%s"]
+					}
+					""".formatted(watchListId, watchListMemberId);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+			if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.NO_CONTENT) {
+				return true;
+			} else {
+				throw new SmartfaceException("Unexpected response: " + response.getBody(),
+						response.getStatusCodeValue());
+			}
+
+		} catch (HttpClientErrorException e) {
+			String title = "Client error";
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode json = mapper.readTree(e.getResponseBodyAsString());
+				if (json.has("title")) {
+					title = json.get("title").asText();
+				}
+			} catch (Exception ex) {
+			}
+			System.out.println(title);
+			throw new SmartfaceException(title, e.getStatusCode().value());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+
 	}
 
 }
