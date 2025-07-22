@@ -7,6 +7,8 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 @SpringBootApplication
 public class SmartfaceApiWrapperApplication {
 
@@ -30,5 +32,10 @@ public class SmartfaceApiWrapperApplication {
 		};
 	}
 	
+	
+	@Bean
+	public ObjectMapper objectMapper() {
+		return new ObjectMapper();
+	}
 
 }
