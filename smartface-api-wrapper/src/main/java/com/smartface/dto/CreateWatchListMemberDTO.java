@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class CreateWatchListMemberDTO {
 	
+	private String memberId;
 	private String displayName;
 	private String fullName;
 	private String note;

@@ -2,7 +2,6 @@ package com.smartface.controller;
 
 import java.util.Map;
 
-import java.util.Map;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,58 +79,80 @@ public class WatchListController {
 
 	}
 
-	@PostMapping("/create")
-	public ResponseEntity<?> createWatchList(@Valid @RequestBody CreateWatchListDTO createWatchListDTO) {
 
-		try {
-			String url = smartfaceProperties.getBaseurl() + "Watchlists";
-
-			ResponseEntity<?> response = restTemplate.postForEntity(url, createWatchListDTO, Object.class);
-
-			ApiResponse<?> apiResponse = new ApiResponse<>("Watchlist was created successfully", response.getBody(),
-					response.getStatusCodeValue());
-			return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
-
-		} catch (HttpClientErrorException e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Client error", e.getResponseBodyAsString(),
-					e.getStatusCode().value());
-			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
-
-		} catch (HttpServerErrorException e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Server error", e.getResponseBodyAsString(),
-					e.getStatusCode().value());
-			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
-
-		} catch (Exception e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Unexpected error: " + e.getMessage(), null,
-					HttpStatus.INTERNAL_SERVER_ERROR.value());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-		}
-	}
 
 	@PostMapping("/addMember")
-	public ResponseEntity<?> addWatchListMember(@RequestBody CreateWatchListMemberDTO createWatchListMemberDTO)
-			throws SmartfaceException {
+	public ResponseEntity<?> addWatchListMember(@RequestBody CreateWatchListMemberDTO createWatchListMemberDTO) {
 
+		String id = null;
+		boolean isLinked = false;
 		try {
-			String id = getWatchListMemberId(createWatchListMemberDTO);
-
-			System.out.println(id);
-			boolean isLinked = linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(), id);
-
-			System.out.println("isLinked: " + isLinked);
-			if (!isLinked) {
-				throw new SmartfaceException("Failed to link watchlist member to watchlist",
-						HttpStatus.INTERNAL_SERVER_ERROR.value());
+			try {
+				
+				id = getWatchListMemberId(createWatchListMemberDTO);
+//				System.out.println(id);
+				createWatchListMemberDTO.setMemberId(id);
 			}
-			ApiResponse<String> apiResponse = new ApiResponse<>("Watchlist member was added successfully", id,
-					HttpStatus.CREATED.value());
-			return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+			catch(Exception e) {
+				ApiResponse<?> response = new ApiResponse<>("failed to create watchlist member", e, HttpStatus.BAD_REQUEST.value());
+				return ResponseEntity.badRequest().body(response);
+			}
+
+			try {
+				
+				isLinked = linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(),createWatchListMemberDTO.getMemberId());
+			}
+			catch(Exception e) {
+				ApiResponse response = new ApiResponse<>("failed to link to the watchlist", e, HttpStatus.BAD_REQUEST.value());
+				return ResponseEntity.badRequest().body(response);
+			}
+			
+			
+			ApiResponse response = addImageToWatchListMember(createWatchListMemberDTO);
+			return ResponseEntity.status(response.getStatusCode()).body(response);
+				
+
 		} catch (Exception e) {
 			ApiResponse<String> apiResponse = new ApiResponse<>("Error while adding member: " + e.getMessage(), null,
 					HttpStatus.INTERNAL_SERVER_ERROR.value());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
 		}
+	}
+	
+	public ApiResponse<?> addImageToWatchListMember(CreateWatchListMemberDTO createWatchListMemberDTO) {
+		
+		String url = smartfaceProperties.getBaseurl()+"WatchlistMembers/"+createWatchListMemberDTO.getMemberId()+"/AddNewFace";
+		
+		String body =
+				String.format("""
+						{
+						  "imageData": {
+						    "faceId": null,
+						    "data": "%s"
+						  },
+						  "faceDetectorConfig": {
+						    "minFaceSize": 35,
+						    "maxFaceSize": 600,
+						    "maxFaces": 20,
+						    "confidenceThreshold": 450
+						  },
+						  "faceDetectorResourceId": "%s",
+						  "templateGeneratorResourceId": "%s",
+						  "faceValidationMode": "predefined"
+						}
+						""", createWatchListMemberDTO.getImageBase64(), smartfaceProperties.getFaceDetectorResourceId(), smartfaceProperties.getTemplateGeneratorResourceId());
+		
+		ResponseEntity<?> response = restTemplate.postForEntity(url, body, Object.class);
+		
+		
+			
+		ApiResponse<?> apiResponse = new ApiResponse<>(response.getStatusCode().is2xxSuccessful()?"success":"failure", response.getBody(), response.getStatusCode().value());
+		
+		return apiResponse;
+		
+		
+		
+		
 	}
 
 	public String getWatchListMemberId(CreateWatchListMemberDTO createWatchListMemberDTO) throws SmartfaceException {

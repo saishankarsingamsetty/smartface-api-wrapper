@@ -17,4 +17,10 @@ public class SmartfaceProperties {
 	
 	@Value("${smartface.page.defaultsize}")
 	private int defaultPageSize;
+	
+	@Value("${smartface.faceDetectorResourceId}")
+	private String faceDetectorResourceId;
+	
+	@Value("${smartface.templateGeneratorResourceId}")
+	private String templateGeneratorResourceId;
 }
