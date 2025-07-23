@@ -1,5 +1,6 @@
 package com.smartface.controller;
 
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -93,6 +94,51 @@ public class WatchListController {
 	                e.getStatusCode().value()
 	        );
 	        return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+
+	    } catch (Exception e) {
+	        ApiResponse<String> apiResponse = new ApiResponse<>(
+	                "Unexpected error: " + e.getMessage(),
+	                null,
+	                HttpStatus.INTERNAL_SERVER_ERROR.value()
+	        );
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+	    }
+	}
+
+	@PostMapping("/delete")
+	public ResponseEntity<?> deleteWatchList(@RequestBody Map<String, String> request) {
+	    try {
+	        String watchlistId = request.get("id");
+	        if (watchlistId == null || watchlistId.isEmpty()) {
+	            return ResponseEntity.badRequest().body(new ApiResponse<>("Watchlist ID is required", null, HttpStatus.BAD_REQUEST.value()));
+	        }
+
+	        String url = smartfaceProperties.getBaseurl() + "Watchlists/" + watchlistId;
+
+	        restTemplate.delete(url);
+
+	        ApiResponse<String> apiResponse = new ApiResponse<>(
+	                "Watchlist deleted successfully",
+	                null,
+	                HttpStatus.OK.value()
+	        );
+	        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+
+	    } catch (HttpClientErrorException e) {
+	        ApiResponse<String> apiResponse = new ApiResponse<>(
+	                "Client error",
+	                e.getResponseBodyAsString(),
+	                e.getStatusCode().value()
+	        );
+	        return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+
+	    } catch (HttpServerErrorException e) {
+	        ApiResponse<String> apiResponse = new ApiResponse<>(
+	                "Server error",
+	                e.getResponseBodyAsString(),
+	                e.getStatusCode().value()
+	        );
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
 
 	    } catch (Exception e) {
 	        ApiResponse<String> apiResponse = new ApiResponse<>(
