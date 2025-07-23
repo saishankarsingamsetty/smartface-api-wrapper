@@ -17,6 +17,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.DeleteWatchListMemberDto;
+import com.smartface.dto.MasterListDTO;
 import com.smartface.dto.WatchListMemberDTO;
 import com.smartface.dto.WatchListMembersRequest;
 import com.smartface.exception.SmartfaceException;
@@ -46,7 +47,7 @@ public class WatchListMembersController {
 	
 	
 	@PostMapping("/fetch")
-	public ResponseEntity<?> fetchWatchlistMembersById(@RequestBody WatchListMembersRequest request) {
+	public ResponseEntity<?> fetchWatchlistMembersByWatchListId(@RequestBody WatchListMembersRequest request) {
 	    if (request == null || request.getWatchlistId() == null) {
 	        ApiResponse<?> response = new ApiResponse<>("Bad Request", null, HttpStatus.BAD_REQUEST.value());
 	        return ResponseEntity.badRequest().body(response);
@@ -129,6 +130,68 @@ public class WatchListMembersController {
 		
 		
 		
+	}
+	
+	@GetMapping("/all")
+	public ResponseEntity<?> fetchAllMembers() {
+	    try {
+	        String membersUrl = smartfaceProperties.getBaseurl() +
+	            "/WatchlistMembers?Ascending=true&PageNumber=1&PageSize=" +
+	            smartfaceProperties.getDefaultPageSize() +
+	            "&ShowTotalCount=true";
+	        Map<String, Object> result = restTemplate.getForObject(membersUrl, Map.class);
+ 
+	        List<Map<String, Object>> items = (List<Map<String, Object>>) result.get("items");
+	        List<MasterListDTO> members = new ArrayList<>();
+ 
+	        for (Map<String, Object> item : items) {
+	            MasterListDTO member = new MasterListDTO();
+	            member.setId((String) item.get("id"));
+	           
+	            String name = (String) item.get("fullName");
+	            if (name == null || name.isEmpty()) {
+	                name = (String) item.get("displayName");
+	            }
+	            member.setName(name);
+	            member.setLabels((List<String>) item.get("labels"));
+ 
+	           
+	            try {
+	                String facesUrl = smartfaceProperties.getBaseurl() +
+	                    "WatchlistMembers/" + member.getId() +
+	                    "/Faces?Ascending=true&ShowTotalCount=true";
+ 
+	                Map<String, Object> faceData = restTemplate.getForObject(facesUrl, Map.class);
+	                List<Map<String, Object>> faceItems = (List<Map<String, Object>>) faceData.get("items");
+ 
+	                if (faceItems != null && !faceItems.isEmpty()) {
+	                    String imageDataId = (String) faceItems.get(0).get("imageDataId");
+	                    byte[] imageBytes = fetchImageBytes(imageDataId);
+	                    if (imageBytes != null && imageBytes.length > 0) {
+	                        String base64 = Base64.getEncoder().encodeToString(imageBytes);
+	                        member.setImg("data:image/jpeg;base64," + base64);
+	                    }
+	                }
+	            } catch (Exception e) {
+	               
+	                member.setImg(null);
+	            }
+ 
+	            members.add(member);
+	        }
+ 
+	        ApiResponse<List<MasterListDTO>> apiResponse =
+	                new ApiResponse<>("Success", members, HttpStatus.OK.value());
+ 
+	        return ResponseEntity.ok(apiResponse);
+ 
+	    } catch (HttpClientErrorException e) {
+	        return ResponseEntity.status(e.getStatusCode())
+	                .body(new ApiResponse<>(e.getMessage(), null, e.getRawStatusCode()));
+	    } catch (Exception e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+	                .body(new ApiResponse<>(e.getMessage(), null, 500));
+	    }
 	}
 
 	
