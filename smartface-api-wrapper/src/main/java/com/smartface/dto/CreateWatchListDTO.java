@@ -11,7 +11,7 @@ import lombok.Data;
 public class CreateWatchListDTO {
 	
 	@NotBlank
-	@NotInDisallowedWatchlistNames
+	@NotInDisallowedWatchlistNames(message = "duplicate watchlist name")
 	private String displayName;
 	
 	@NotBlank

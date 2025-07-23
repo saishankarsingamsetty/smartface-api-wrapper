@@ -24,7 +24,7 @@ public class DisAllowedWatchListNameValidator implements ConstraintValidator<Not
 
 	@Override
 	public boolean isValid(String value, ConstraintValidatorContext context) {
-		System.out.println("validation method");
+//		System.out.println("validation method");
 		if (value == null || value.trim().isEmpty()) {
 			return true;
 		}
