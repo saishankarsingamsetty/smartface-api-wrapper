@@ -81,7 +81,7 @@ public class WatchListController {
 
 
 
-	@PostMapping("/addMember")
+	@PostMapping("/addmember")
 	public ResponseEntity<?> addWatchListMember(@RequestBody CreateWatchListMemberDTO createWatchListMemberDTO) {
 
 		String id = null;
@@ -107,6 +107,11 @@ public class WatchListController {
 				return ResponseEntity.badRequest().body(response);
 			}
 			
+			if(createWatchListMemberDTO.getImageBase64()!=null) {
+//				System.out.println(createWatchListMemberDTO.getImageBase64());
+				createWatchListMemberDTO.setImageBase64(createWatchListMemberDTO.getImageBase64().substring(23)); 
+//				System.out.println(createWatchListMemberDTO.getImageBase64().substring(0,10));
+			}
 			
 			ApiResponse response = addImageToWatchListMember(createWatchListMemberDTO);
 			return ResponseEntity.status(response.getStatusCode()).body(response);
@@ -142,13 +147,20 @@ public class WatchListController {
 						}
 						""", createWatchListMemberDTO.getImageBase64(), smartfaceProperties.getFaceDetectorResourceId(), smartfaceProperties.getTemplateGeneratorResourceId());
 		
-		ResponseEntity<?> response = restTemplate.postForEntity(url, body, Object.class);
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.valueOf("application/json-patch+json"));
+		headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+		HttpEntity<String> entity = new HttpEntity<>(body, headers);
+
+		ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
 		
 		
 			
 		ApiResponse<?> apiResponse = new ApiResponse<>(response.getStatusCode().is2xxSuccessful()?"success":"failure", response.getBody(), response.getStatusCode().value());
 		
 		return apiResponse;
+		
 		
 		
 		
