@@ -16,20 +16,33 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.smartface.application.SmartfaceProperties;
+import com.smartface.dto.DeleteWatchListMemberDto;
 import com.smartface.dto.WatchListMemberDTO;
 import com.smartface.dto.WatchListMembersRequest;
+import com.smartface.exception.SmartfaceException;
 import com.smartface.response.ApiResponse;
+import com.smartface.service.WatchListMemberService;
 
 
 @RestController
 @RequestMapping("/watchlistmembers")
 public class WatchListMembersController {
 
+    private final CameraController cameraController;
+
 	@Autowired
 	SmartfaceProperties smartfaceProperties;
 	
 	@Autowired
 	RestTemplate restTemplate;
+	
+	@Autowired
+	WatchListMemberService watchListMemberService;
+
+
+    WatchListMembersController(CameraController cameraController) {
+        this.cameraController = cameraController;
+    }
 	
 	
 	@PostMapping("/fetch")
@@ -99,6 +112,23 @@ public class WatchListMembersController {
 	    } catch (Exception e) {
 	        return new byte[0];
 	    }
+	}
+	
+	@PostMapping("/delete")
+	public ResponseEntity<?> deleteWatchListMemeberById(@RequestBody DeleteWatchListMemberDto dto){
+		
+		try {
+			boolean deletionStatus = watchListMemberService.deleteWatchListMemberById(dto.getMemberId());
+			ApiResponse<?> apiResponse = new ApiResponse<>("success", null, 200);
+			return ResponseEntity.ok(apiResponse);
+		}
+		catch(SmartfaceException e) {
+			ApiResponse<?> apiResponse = new ApiResponse<>("failed to delete the member", null, e.getStatusCode());
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(apiResponse);
+		}
+		
+		
+		
 	}
 
 	

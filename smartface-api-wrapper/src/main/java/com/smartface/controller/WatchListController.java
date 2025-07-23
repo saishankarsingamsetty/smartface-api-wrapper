@@ -5,11 +5,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,13 +17,12 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateWatchListDTO;
 import com.smartface.dto.CreateWatchListMemberDTO;
-import com.smartface.exception.SmartfaceException;
+import com.smartface.dto.DeleteWatchListMemberDto;
 import com.smartface.response.ApiResponse;
+import com.smartface.service.WatchListMemberService;
 
 import jakarta.validation.Valid;
 
@@ -40,6 +35,9 @@ public class WatchListController {
 
 	@Autowired
 	RestTemplate restTemplate;
+
+	@Autowired
+	WatchListMemberService watchListMemberService;
 
 	@GetMapping("/fetch")
 	public ResponseEntity<?> fetchWatchLists() {
@@ -77,8 +75,6 @@ public class WatchListController {
 
 	}
 
-
-
 	@PostMapping("/addmember")
 	public ResponseEntity<?> addWatchListMember(@RequestBody CreateWatchListMemberDTO createWatchListMemberDTO) {
 
@@ -86,243 +82,69 @@ public class WatchListController {
 		boolean isLinked = false;
 		try {
 			try {
-				
-				id = getWatchListMemberId(createWatchListMemberDTO);
+
+				id = watchListMemberService.getWatchListMemberId(createWatchListMemberDTO);
 //				System.out.println(id);
 				createWatchListMemberDTO.setMemberId(id);
-			}
-			catch(Exception e) {
-				ApiResponse<?> response = new ApiResponse<>("failed to create watchlist member", e, HttpStatus.BAD_REQUEST.value());
+			} catch (Exception e) {
+				ApiResponse<?> response = new ApiResponse<>("failed to create watchlist member", e,
+						HttpStatus.BAD_REQUEST.value());
 				return ResponseEntity.badRequest().body(response);
 			}
 
 			try {
-				
-				isLinked = linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(),createWatchListMemberDTO.getMemberId());
-			}
-			catch(Exception e) {
+
+				isLinked = watchListMemberService.linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(),
+						createWatchListMemberDTO.getMemberId());
+			} catch (Exception e) {
 				try {
-					deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
-				}
-				catch(Exception ex) {
-					ApiResponse response = new ApiResponse<>("failed to delete the watchlist member", ex, HttpStatus.BAD_REQUEST.value());
+					watchListMemberService.deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
+				} catch (Exception ex) {
+					ApiResponse response = new ApiResponse<>("failed to delete the watchlist member", ex,
+							HttpStatus.BAD_REQUEST.value());
 					return ResponseEntity.badRequest().body(response);
 				}
-				ApiResponse response = new ApiResponse<>("failed to link to the watchlist", e, HttpStatus.BAD_REQUEST.value());
+				ApiResponse response = new ApiResponse<>("failed to link to the watchlist", null,
+						HttpStatus.BAD_REQUEST.value());
 				return ResponseEntity.badRequest().body(response);
 			}
-			
-			if(createWatchListMemberDTO.getImageBase64()!=null) {
-				createWatchListMemberDTO.setImageBase64(createWatchListMemberDTO.getImageBase64().substring(23));
+
+			if (createWatchListMemberDTO.getImageBase64().contains(",")) {
+				createWatchListMemberDTO.setImageBase64(createWatchListMemberDTO.getImageBase64()
+						.substring(createWatchListMemberDTO.getImageBase64().indexOf(",") + 1));
 			}
-			
+
 			try {
-				
-				ApiResponse response = addImageToWatchListMember(createWatchListMemberDTO);
-				return ResponseEntity.status(response.getStatusCode()).body(response); 
-			}
-			catch(Exception e) {
-				
+
+				ApiResponse response = watchListMemberService.addImageToWatchListMember(createWatchListMemberDTO);
+				return ResponseEntity.status(response.getStatusCode()).body(response);
+			} catch (Exception e) {
+
 				try {
-					boolean unlinkstatus = unLinkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(), createWatchListMemberDTO.getMemberId());
-				}
-				catch(Exception ee) {
-					ApiResponse unlinkresponse = new ApiResponse<>("failed to unlink to the watchlist", ee, HttpStatus.BAD_REQUEST.value());
+					boolean unlinkstatus = watchListMemberService.unLinkWatchListMemberToWatchList(
+							createWatchListMemberDTO.getWatchlistId(), createWatchListMemberDTO.getMemberId());
+				} catch (Exception ee) {
+					ApiResponse unlinkresponse = new ApiResponse<>("failed to unlink to the watchlist", null,
+							HttpStatus.BAD_REQUEST.value());
 					return ResponseEntity.badRequest().body(unlinkresponse);
 				}
-				
+
 				try {
-					deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
-				}
-				catch(Exception eee) {
-					ApiResponse failresponse = new ApiResponse<>("failed to delete the watchlist member", eee, HttpStatus.BAD_REQUEST.value());
+					watchListMemberService.deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
+				} catch (Exception eee) {
+					ApiResponse failresponse = new ApiResponse<>("failed to delete the watchlist member", eee,
+							HttpStatus.BAD_REQUEST.value());
 					return ResponseEntity.badRequest().body(failresponse);
 				}
 			}
-			
-			
+
 			ApiResponse failresponse = new ApiResponse<>("failure", null, HttpStatus.BAD_REQUEST.value());
-			return ResponseEntity.badRequest().body(failresponse);	
-				
+			return ResponseEntity.badRequest().body(failresponse);
 
 		} catch (Exception e) {
 			ApiResponse<String> apiResponse = new ApiResponse<>("Error while adding member: " + e.getMessage(), null,
 					HttpStatus.INTERNAL_SERVER_ERROR.value());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-		}
-	}
-	
-	public boolean deleteWatchListMemberById(String watchListMemberId)throws SmartfaceException
-	{
-		try {
-			String url = smartfaceProperties.getBaseurl() + "WatchlistMembers/"+watchListMemberId;
-			
-			ResponseEntity<?> response = restTemplate.exchange(url, HttpMethod.DELETE, null, Object.class);
-			
-			if(response.getStatusCode() == HttpStatus.NO_CONTENT)
-			{
-				return true;
-			}else {
-				throw new SmartfaceException("failed to delete the member", 0);
-			}
-		}catch(Exception e)
-		{
-			throw new SmartfaceException("failed to delete the member", 0);
-		}
-	}
-	
-	public ApiResponse<?> addImageToWatchListMember(CreateWatchListMemberDTO createWatchListMemberDTO) {
-		
-		String url = smartfaceProperties.getBaseurl()+"WatchlistMembers/"+createWatchListMemberDTO.getMemberId()+"/AddNewFace";
-		
-		String body =
-				String.format("""
-						{
-						  "imageData": {
-						    "faceId": null,
-						    "data": "%s"
-						  },
-						  "faceDetectorConfig": {
-						    "minFaceSize": 35,
-						    "maxFaceSize": 600,
-						    "maxFaces": 20,
-						    "confidenceThreshold": 450
-						  },
-						  "faceDetectorResourceId": "%s",
-						  "templateGeneratorResourceId": "%s",
-						  "faceValidationMode": "predefined"
-						}
-						""", createWatchListMemberDTO.getImageBase64(), smartfaceProperties.getFaceDetectorResourceId(), smartfaceProperties.getTemplateGeneratorResourceId());
-		
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.valueOf("application/json-patch+json"));
-		headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-
-		HttpEntity<String> entity = new HttpEntity<>(body, headers);
-
-		ResponseEntity<?> response = restTemplate.postForEntity(url, entity, Object.class);
-		
-		
-			
-		ApiResponse<?> apiResponse = new ApiResponse<>(response.getStatusCode().is2xxSuccessful()?"success":"failure", response.getBody(), response.getStatusCode().value());
-		
-		return apiResponse;
-		
-		
-		
-		
-		
-	}
-
-	public String getWatchListMemberId(CreateWatchListMemberDTO createWatchListMemberDTO) throws SmartfaceException {
-		try {
-
-			String url = smartfaceProperties.getBaseurl() + "WatchlistMembers";
-
-			ResponseEntity response = restTemplate.postForEntity(url, createWatchListMemberDTO, Object.class);
-
-			if (response.getStatusCode() == HttpStatus.CREATED) {
-				Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-				return (String) responseBody.get("id");
-			} else {
-				throw new SmartfaceException("Failed to create watchlist member", response.getStatusCodeValue());
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null; // Handle exceptions as needed
-		}
-	}
-
-	public boolean linkWatchListMemberToWatchList(String watchListId, String watchListMemberId)
-			throws SmartfaceException {
-		try {
-			String url = smartfaceProperties.getBaseurl() + "/WatchlistMembers/LinkToWatchlist";
-
-			String body = """
-					{
-					    "watchlistId": "%s",
-					    "watchlistMembersIds": ["%s"]
-					}
-					""".formatted(watchListId, watchListMemberId);
-
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
-
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-
-			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
-			if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.NO_CONTENT) {
-				return true;
-			} else {
-				throw new SmartfaceException("Unexpected response: " + response.getBody(),
-						response.getStatusCodeValue());
-			}
-
-		} catch (HttpClientErrorException e) {
-			String title = "Client error";
-			try {
-				ObjectMapper mapper = new ObjectMapper();
-				JsonNode json = mapper.readTree(e.getResponseBodyAsString());
-				if (json.has("title")) {
-					title = json.get("title").asText();
-				}
-			} catch (Exception ex) {
-			}
-//			System.out.println(title);
-			throw new SmartfaceException(title, e.getStatusCode().value());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
-	
-	
-	public boolean unLinkWatchListMemberToWatchList(String watchListId, String watchListMemberId)
-			throws SmartfaceException {
-		try {
-			String url = smartfaceProperties.getBaseurl() + "/WatchlistMembers/UnlinkFromWatchlist";
-
-			String body = """
-					{
-					    "watchlistId": "%s",
-					    "watchlistMembersIds": ["%s"]
-					}
-					""".formatted(watchListId, watchListMemberId);
-
-			HttpHeaders headers = new HttpHeaders();
-			headers.setContentType(MediaType.APPLICATION_JSON);
-
-			HttpEntity<String> entity = new HttpEntity<>(body, headers);
-
-			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-
-			if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.NO_CONTENT) {
-				return true;
-			} else {
-				throw new SmartfaceException("Unexpected response: " + response.getBody(),
-						response.getStatusCodeValue());
-			}
-
-		} catch (HttpClientErrorException e) {
-			String title = "Client error";
-			try {
-				ObjectMapper mapper = new ObjectMapper();
-				JsonNode json = mapper.readTree(e.getResponseBodyAsString());
-				if (json.has("title")) {
-					title = json.get("title").asText();
-				}
-			} catch (Exception ex) {
-			}
-//			System.out.println(title);
-			throw new SmartfaceException(title, e.getStatusCode().value());
-
-		} catch (Exception e) {
-//			e.printStackTrace();
-			
-			return false;
 		}
 	}
 
@@ -340,10 +162,11 @@ public class WatchListController {
 						response.getStatusCodeValue());
 				return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
 			} else {
-				List<String> errorMessages = result.getAllErrors().stream()
-						.map(error -> error.getDefaultMessage()).collect(Collectors.toList());
+				List<String> errorMessages = result.getAllErrors().stream().map(error -> error.getDefaultMessage())
+						.collect(Collectors.toList());
 
-				ApiResponse<?> response = new ApiResponse("error creating watchlist",errorMessages,HttpStatus.BAD_REQUEST.value());
+				ApiResponse<?> response = new ApiResponse("error creating watchlist", errorMessages,
+						HttpStatus.BAD_REQUEST.value());
 				return ResponseEntity.badRequest().body(response);
 			}
 
@@ -367,47 +190,39 @@ public class WatchListController {
 
 	@PostMapping("/delete")
 	public ResponseEntity<?> deleteWatchList(@RequestBody Map<String, String> request) {
-	    try {
-	        String watchlistId = request.get("id");
-	        if (watchlistId == null || watchlistId.isEmpty()) {
-	            return ResponseEntity.badRequest().body(new ApiResponse<>("Watchlist ID is required", null, HttpStatus.BAD_REQUEST.value()));
-	        }
+		try {
+			String watchlistId = request.get("id");
+			if (watchlistId == null || watchlistId.isEmpty()) {
+				return ResponseEntity.badRequest()
+						.body(new ApiResponse<>("Watchlist ID is required", null, HttpStatus.BAD_REQUEST.value()));
+			}
 
-	        String url = smartfaceProperties.getBaseurl() + "Watchlists/" + watchlistId;
+			String url = smartfaceProperties.getBaseurl() + "Watchlists/" + watchlistId;
 
-	        restTemplate.delete(url);
+			restTemplate.delete(url);
 
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Watchlist deleted successfully",
-	                null,
-	                HttpStatus.OK.value()
-	        );
-	        return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+			ApiResponse<String> apiResponse = new ApiResponse<>("Watchlist deleted successfully", null,
+					HttpStatus.OK.value());
+			return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
 
-	    } catch (HttpClientErrorException e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Client error",
-	                e.getResponseBodyAsString(),
-	                e.getStatusCode().value()
-	        );
-	        return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
+		} catch (HttpClientErrorException e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Client error", e.getResponseBodyAsString(),
+					e.getStatusCode().value());
+			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
 
-	    } catch (HttpServerErrorException e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Server error",
-	                e.getResponseBodyAsString(),
-	                e.getStatusCode().value()
-	        );
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+		} catch (HttpServerErrorException e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Server error", e.getResponseBodyAsString(),
+					e.getStatusCode().value());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
 
-	    } catch (Exception e) {
-	        ApiResponse<String> apiResponse = new ApiResponse<>(
-	                "Unexpected error: " + e.getMessage(),
-	                null,
-	                HttpStatus.INTERNAL_SERVER_ERROR.value()
-	        );
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-	    }
+		} catch (Exception e) {
+			ApiResponse<String> apiResponse = new ApiResponse<>("Unexpected error: " + e.getMessage(), null,
+					HttpStatus.INTERNAL_SERVER_ERROR.value());
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+		}
 	}
+	
+
+	
 
 }
