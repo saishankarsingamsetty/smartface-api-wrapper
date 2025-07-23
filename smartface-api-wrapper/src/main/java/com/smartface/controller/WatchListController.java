@@ -1,15 +1,13 @@
 package com.smartface.controller;
 
-import java.util.Map;
-
-
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -103,24 +101,73 @@ public class WatchListController {
 				isLinked = linkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(),createWatchListMemberDTO.getMemberId());
 			}
 			catch(Exception e) {
+				try {
+					deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
+				}
+				catch(Exception ex) {
+					ApiResponse response = new ApiResponse<>("failed to delete the watchlist member", ex, HttpStatus.BAD_REQUEST.value());
+					return ResponseEntity.badRequest().body(response);
+				}
 				ApiResponse response = new ApiResponse<>("failed to link to the watchlist", e, HttpStatus.BAD_REQUEST.value());
 				return ResponseEntity.badRequest().body(response);
 			}
 			
 			if(createWatchListMemberDTO.getImageBase64()!=null) {
-//				System.out.println(createWatchListMemberDTO.getImageBase64());
-				createWatchListMemberDTO.setImageBase64(createWatchListMemberDTO.getImageBase64().substring(23)); 
-//				System.out.println(createWatchListMemberDTO.getImageBase64().substring(0,10));
+				createWatchListMemberDTO.setImageBase64(createWatchListMemberDTO.getImageBase64().substring(23));
 			}
 			
-			ApiResponse response = addImageToWatchListMember(createWatchListMemberDTO);
-			return ResponseEntity.status(response.getStatusCode()).body(response);
+			try {
+				
+				ApiResponse response = addImageToWatchListMember(createWatchListMemberDTO);
+				return ResponseEntity.status(response.getStatusCode()).body(response); 
+			}
+			catch(Exception e) {
+				
+				try {
+					boolean unlinkstatus = unLinkWatchListMemberToWatchList(createWatchListMemberDTO.getWatchlistId(), createWatchListMemberDTO.getMemberId());
+				}
+				catch(Exception ee) {
+					ApiResponse unlinkresponse = new ApiResponse<>("failed to unlink to the watchlist", ee, HttpStatus.BAD_REQUEST.value());
+					return ResponseEntity.badRequest().body(unlinkresponse);
+				}
+				
+				try {
+					deleteWatchListMemberById(createWatchListMemberDTO.getMemberId());
+				}
+				catch(Exception eee) {
+					ApiResponse failresponse = new ApiResponse<>("failed to delete the watchlist member", eee, HttpStatus.BAD_REQUEST.value());
+					return ResponseEntity.badRequest().body(failresponse);
+				}
+			}
+			
+			
+			ApiResponse failresponse = new ApiResponse<>("failure", null, HttpStatus.BAD_REQUEST.value());
+			return ResponseEntity.badRequest().body(failresponse);	
 				
 
 		} catch (Exception e) {
 			ApiResponse<String> apiResponse = new ApiResponse<>("Error while adding member: " + e.getMessage(), null,
 					HttpStatus.INTERNAL_SERVER_ERROR.value());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
+		}
+	}
+	
+	public boolean deleteWatchListMemberById(String watchListMemberId)throws SmartfaceException
+	{
+		try {
+			String url = smartfaceProperties.getBaseurl() + "WatchlistMembers/"+watchListMemberId;
+			
+			ResponseEntity<?> response = restTemplate.exchange(url, HttpMethod.DELETE, null, Object.class);
+			
+			if(response.getStatusCode() == HttpStatus.NO_CONTENT)
+			{
+				return true;
+			}else {
+				throw new SmartfaceException("failed to delete the member", 0);
+			}
+		}catch(Exception e)
+		{
+			throw new SmartfaceException("failed to delete the member", 0);
 		}
 	}
 	
@@ -223,11 +270,58 @@ public class WatchListController {
 				}
 			} catch (Exception ex) {
 			}
-			System.out.println(title);
+//			System.out.println(title);
 			throw new SmartfaceException(title, e.getStatusCode().value());
 
 		} catch (Exception e) {
 			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	
+	public boolean unLinkWatchListMemberToWatchList(String watchListId, String watchListMemberId)
+			throws SmartfaceException {
+		try {
+			String url = smartfaceProperties.getBaseurl() + "/WatchlistMembers/UnlinkFromWatchlist";
+
+			String body = """
+					{
+					    "watchlistId": "%s",
+					    "watchlistMembersIds": ["%s"]
+					}
+					""".formatted(watchListId, watchListMemberId);
+
+			HttpHeaders headers = new HttpHeaders();
+			headers.setContentType(MediaType.APPLICATION_JSON);
+
+			HttpEntity<String> entity = new HttpEntity<>(body, headers);
+
+			ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
+
+			if (response.getStatusCode() == HttpStatus.OK || response.getStatusCode() == HttpStatus.NO_CONTENT) {
+				return true;
+			} else {
+				throw new SmartfaceException("Unexpected response: " + response.getBody(),
+						response.getStatusCodeValue());
+			}
+
+		} catch (HttpClientErrorException e) {
+			String title = "Client error";
+			try {
+				ObjectMapper mapper = new ObjectMapper();
+				JsonNode json = mapper.readTree(e.getResponseBodyAsString());
+				if (json.has("title")) {
+					title = json.get("title").asText();
+				}
+			} catch (Exception ex) {
+			}
+//			System.out.println(title);
+			throw new SmartfaceException(title, e.getStatusCode().value());
+
+		} catch (Exception e) {
+//			e.printStackTrace();
+			
 			return false;
 		}
 	}
