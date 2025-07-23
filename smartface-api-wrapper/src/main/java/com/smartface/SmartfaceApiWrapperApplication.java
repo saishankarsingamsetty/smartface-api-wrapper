@@ -31,11 +31,5 @@ public class SmartfaceApiWrapperApplication {
 			}
 		};
 	}
-	
-	
-	@Bean
-	public ObjectMapper objectMapper() {
-		return new ObjectMapper();
-	}
 
 }

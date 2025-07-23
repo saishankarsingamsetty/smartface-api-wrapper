@@ -199,6 +199,7 @@ public class WatchListController {
 		}
 	}
 
+	@PostMapping("/create")
 	public ResponseEntity<?> createWatchList(@Valid @RequestBody CreateWatchListDTO createWatchListDTO,
 			BindingResult result) {
 		try {
