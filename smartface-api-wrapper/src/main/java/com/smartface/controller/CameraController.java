@@ -2,6 +2,7 @@ package com.smartface.controller;
 
 import java.util.Map;
 
+import com.smartface.service.CameraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -17,17 +18,25 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import com.smartface.application.SmartfaceProperties;
+import com.smartface.dto.CreateCameraDTO;
+import com.smartface.exception.SmartfaceException;
 import com.smartface.response.ApiResponse;
 
 @RestController
 @RequestMapping("/camera")
 public class CameraController {
+
+    private final CameraService cameraService;
 	
 	@Autowired
 	SmartfaceProperties smartfaceProperties;
 	
 	@Autowired
 	RestTemplate restTemplate;
+
+    CameraController(CameraService cameraService) {
+        this.cameraService = cameraService;
+    }
 
 	@GetMapping("/fetch")
 	public ResponseEntity<?> fetchAllCameras(){
@@ -92,5 +101,18 @@ public class CameraController {
 					HttpStatus.INTERNAL_SERVER_ERROR.value());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
 		}
+		}
+	@PostMapping("/add")
+	public ResponseEntity<?> addCamera(@RequestBody CreateCameraDTO dto){
+		ApiResponse<?> response = null;
+		try {
+			String result = cameraService.addCamera(dto);
+			response = new ApiResponse("success",result,201);
+		}
+		catch(SmartfaceException e) {
+			response = new ApiResponse("failure",e.getMessage(),e.getStatusCode());
+		}
+		
+		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
 }
