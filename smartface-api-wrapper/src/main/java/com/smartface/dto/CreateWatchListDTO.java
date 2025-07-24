@@ -1,6 +1,5 @@
 package com.smartface.dto;
 
-import com.smartface.validations.NotInDisallowedWatchlistNames;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -11,7 +10,6 @@ import lombok.Data;
 public class CreateWatchListDTO {
 	
 	@NotBlank
-	@NotInDisallowedWatchlistNames(message = "duplicate watchlist name")
 	private String displayName;
 	
 	@NotBlank

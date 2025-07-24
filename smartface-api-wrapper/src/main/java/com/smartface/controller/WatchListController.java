@@ -21,8 +21,10 @@ import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateWatchListDTO;
 import com.smartface.dto.CreateWatchListMemberDTO;
 import com.smartface.dto.DeleteWatchListMemberDto;
+import com.smartface.exception.SmartfaceException;
 import com.smartface.response.ApiResponse;
 import com.smartface.service.WatchListMemberService;
+import com.smartface.service.WatchListService;
 
 import jakarta.validation.Valid;
 
@@ -38,6 +40,9 @@ public class WatchListController {
 
 	@Autowired
 	WatchListMemberService watchListMemberService;
+	
+	@Autowired
+	WatchListService watchListService;
 
 	@GetMapping("/fetch")
 	public ResponseEntity<?> fetchWatchLists() {
@@ -151,16 +156,26 @@ public class WatchListController {
 	@PostMapping("/create")
 	public ResponseEntity<?> createWatchList(@Valid @RequestBody CreateWatchListDTO createWatchListDTO,
 			BindingResult result) {
+		boolean isValidWatchListName = false;
 		try {
 			if (!result.hasErrors()) {
+				
+				try {
+					isValidWatchListName =  watchListService.isValidWatchListName(createWatchListDTO.getDisplayName());
+				}
+				catch(SmartfaceException se) {
+					ApiResponse response = new ApiResponse("duplicate watchlist name",null,se.getStatusCode());
+					return ResponseEntity.badRequest().body(response);
+				}
 
-				String url = smartfaceProperties.getBaseurl() + "Watchlists";
-
-				ResponseEntity<?> response = restTemplate.postForEntity(url, createWatchListDTO, Object.class);
-
-				ApiResponse<?> apiResponse = new ApiResponse<>("Watchlist was created successfully", response.getBody(),
-						response.getStatusCodeValue());
-				return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
+					
+					String url = smartfaceProperties.getBaseurl() + "Watchlists";
+					
+					ResponseEntity<?> response = restTemplate.postForEntity(url, createWatchListDTO, Object.class);
+					
+					ApiResponse<?> apiResponse = new ApiResponse<>("Watchlist was created successfully", response.getBody(),
+							response.getStatusCodeValue());
+					return ResponseEntity.status(response.getStatusCode()).body(apiResponse);
 			} else {
 				List<String> errorMessages = result.getAllErrors().stream().map(error -> error.getDefaultMessage())
 						.collect(Collectors.toList());
