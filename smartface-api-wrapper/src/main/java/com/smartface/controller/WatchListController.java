@@ -5,7 +5,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -199,8 +201,11 @@ public class WatchListController {
 
 			String url = smartfaceProperties.getBaseurl() + "Watchlists/" + watchlistId;
 
-			restTemplate.delete(url);
-
+			Object response = restTemplate.exchange(url,HttpMethod.DELETE,null,Object.class);
+			if(response == null) {
+				ApiResponse<?> apiResponse = new ApiResponse<>("No Content found",null,HttpStatus.NO_CONTENT.value());
+				return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResponse);
+						}
 			ApiResponse<String> apiResponse = new ApiResponse<>("Watchlist deleted successfully", null,
 					HttpStatus.OK.value());
 			return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
