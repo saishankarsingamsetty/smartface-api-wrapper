@@ -7,10 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartface.SmartfaceApiWrapperApplication;
 import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateCameraDTO;
@@ -39,7 +37,7 @@ public class CameraService {
 						{
 		  "name": "%s",
 		  "source": "%s",
-		  "enabled": false,
+		  "enabled": true,
 		  "faceDetectorConfig": {
 		    "minFaceSize": 35,
 		    "maxFaceSize": 600,
@@ -164,7 +162,6 @@ public class CameraService {
 	    try {
             
 	        ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
-//	        System.out.println("hello");
 	        int statusCode = response.getStatusCode().value();
 
 	        if (statusCode == 201) {

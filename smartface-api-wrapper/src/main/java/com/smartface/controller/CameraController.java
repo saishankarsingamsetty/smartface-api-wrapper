@@ -1,12 +1,7 @@
 package com.smartface.controller;
-
-import java.util.Map;
-
 import com.smartface.service.CameraService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -68,40 +63,6 @@ public class CameraController {
         }
 	}
 	
-	@PostMapping("/delete")
-	public ResponseEntity<?> deleteCamera(@RequestBody Map<String,String> request){
-		try {
-			String cameraId = request.get("id");
-			if(cameraId == null || cameraId.isEmpty()) {
-				return ResponseEntity.badRequest()
-						.body(new ApiResponse<>("Camera ID is required",null,HttpStatus.BAD_REQUEST.value()));
-			}
-			
-			String url = smartfaceProperties.getBaseurl()+"Cameras/"+cameraId;
-			Object response = restTemplate.exchange(url, HttpMethod.DELETE,null,Object.class);
-			if(response == null) {
-				ApiResponse<?> apiResponse = new ApiResponse<>("No content found",null,HttpStatus.NO_CONTENT.value());
-				return ResponseEntity.status(HttpStatus.NO_CONTENT).body(apiResponse);
-			}
-			
-			ApiResponse<String> apiResponse = new ApiResponse<>("Camera deleted successfully",null,HttpStatus.OK.value());
-			return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
-		} catch (HttpClientErrorException e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Client error", e.getResponseBodyAsString(),
-					e.getStatusCode().value());
-			return ResponseEntity.status(e.getStatusCode()).body(apiResponse);
-
-		} catch (HttpServerErrorException e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Server error", e.getResponseBodyAsString(),
-					e.getStatusCode().value());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-
-		} catch (Exception e) {
-			ApiResponse<String> apiResponse = new ApiResponse<>("Unexpected error: " + e.getMessage(), null,
-					HttpStatus.INTERNAL_SERVER_ERROR.value());
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(apiResponse);
-		}
-		}
 	@PostMapping("/add")
 	public ResponseEntity<?> addCamera(@RequestBody CreateCameraDTO dto){
 		ApiResponse<?> response = null;
