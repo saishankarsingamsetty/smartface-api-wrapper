@@ -1,10 +1,10 @@
 package com.smartface.controller;
-import com.smartface.service.CameraService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -14,8 +14,12 @@ import org.springframework.web.client.RestTemplate;
 
 import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateCameraDTO;
+import com.smartface.dto.UpdateCameraDTO;
+import com.smartface.entities.Camera;
 import com.smartface.exception.SmartfaceException;
+import com.smartface.mappers.CameraMapper;
 import com.smartface.response.ApiResponse;
+import com.smartface.service.CameraService;
 
 @RestController
 @RequestMapping("/camera")
@@ -28,6 +32,9 @@ public class CameraController {
 	
 	@Autowired
 	RestTemplate restTemplate;
+	
+	@Autowired
+	CameraMapper cameraMapper ;
 
     CameraController(CameraService cameraService) {
         this.cameraService = cameraService;
@@ -76,4 +83,37 @@ public class CameraController {
 		
 		return ResponseEntity.status(response.getStatusCode()).body(response);
 	}
+	
+	@PutMapping("/update")
+	public ResponseEntity<ApiResponse<String>> updateCamera(@RequestBody UpdateCameraDTO dto) {
+		
+		System.out.println("Received UpdateCameraDTO: " + dto);
+
+	    if (dto.getId() == null || dto.getId().isEmpty()) {
+	        throw new SmartfaceException("Camera ID is required for update", HttpStatus.BAD_REQUEST.value());
+	    }
+
+	    // Fetch the existing entity (from DB)
+	    System.out.println("Fetching camera with ID: " + dto.getId());
+	    Camera camera = cameraService.fetchCameraById(dto.getId());
+	    
+	    System.out.println("Fetched camera: ......................" + camera);
+	    
+	    System.out.println("..............................................................................................");
+	    if (camera == null) {
+	        throw new SmartfaceException("Camera not found", HttpStatus.NOT_FOUND.value());
+	    }
+
+	    // ✅ Merge DTO into entity
+	    cameraMapper.updateCameraFromDto(dto, camera);
+	    
+	    System.out.println("Updated camera entity: " + camera);
+
+	    // Save updated entity
+	    String result = cameraService.updateCamera(camera);
+
+	    ApiResponse<String> response = new ApiResponse<>("success", result, HttpStatus.OK.value());
+	    return ResponseEntity.ok(response);
+	}
+	
 }
