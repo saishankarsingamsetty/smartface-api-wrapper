@@ -22,7 +22,7 @@ import com.smartface.response.ApiResponse;
 import com.smartface.service.CameraService;
 
 @RestController
-@RequestMapping("/camera")
+@RequestMapping("/configurations")
 public class CameraController {
 
     private final CameraService cameraService;
