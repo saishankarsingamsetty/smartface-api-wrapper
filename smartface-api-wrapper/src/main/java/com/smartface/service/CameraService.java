@@ -59,7 +59,7 @@ public class CameraService {
 				    "maxFaces": %s,
 				    "confidenceThreshold": %s
 				  },
-				  "faceDetectorResourceId": "%s",
+				  "faceDetectorResourceId": "cpu",
 				  "pedestrianDetectorConfig": {
 				    "minPedestrianSize": 80,
 				    "maxPedestrianSize": 2000,
@@ -172,7 +172,6 @@ public class CameraService {
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaceSize().getSelectedValue()
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaces().getSelectedValue()
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getConfidenceThreshold().getSelectedValue()
-								,configEntity.getConfig().get(0).getFaceDetectorResourceId().getSelectedValue()
 								,configEntity.getConfig().get(0).getSpoofDetectorResourceIds().getSelectedValue()
 								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessScoreThreshold()
 								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessScoreThreshold()
