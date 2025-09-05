@@ -55,11 +55,11 @@ public class CameraService {
 				  "enabled": true,
 				  "faceDetectorConfig": {
 				    "minFaceSize": %s,
-				    "maxFaceSize": 600,
-				    "maxFaces": 20,
-				    "confidenceThreshold": 450
+				    "maxFaceSize": %s,
+				    "maxFaces": %s,
+				    "confidenceThreshold": %s
 				  },
-				  "faceDetectorResourceId": "cpu",
+				  "faceDetectorResourceId": "%s",
 				  "pedestrianDetectorConfig": {
 				    "minPedestrianSize": 80,
 				    "maxPedestrianSize": 2000,
@@ -92,17 +92,17 @@ public class CameraService {
 				  "previewMaxDimension": 640,
 				  "serviceName": "",
 				  "spoofDetectorResourceIds": [
-				    "none"
+				    "%s"
 				  ],
 				  "palmSpoofDetectorResourceIds": [
 				    "none"
 				  ],
 				  "spoofDetectorConfig": {
 				    "externalScoreThreshold": 0,
-				    "distantLivenessScoreThreshold": 90,
-				    "nearbyLivenessScoreThreshold": 90,
-				    "distantLivenessConditions": "default",
-				    "nearbyLivenessConditions": "default"
+				    "distantLivenessScoreThreshold": %s,
+				    "nearbyLivenessScoreThreshold": %s,
+				    "distantLivenessConditions": "%s",
+				    "nearbyLivenessConditions": "%s"
 				  },
 				  "palmSpoofDetectorConfig": {
 				    "livenessScoreThreshold": 85
@@ -169,6 +169,15 @@ public class CameraService {
 								dto.getName()
 								, dto.getSource()
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMinFaceSize().getSelectedValue()
+								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaceSize().getSelectedValue()
+								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaces().getSelectedValue()
+								,configEntity.getConfig().get(0).getFaceDetectorConfig().getConfidenceThreshold().getSelectedValue()
+								,configEntity.getConfig().get(0).getFaceDetectorResourceId().getSelectedValue()
+								,configEntity.getConfig().get(0).getSpoofDetectorResourceIds().getSelectedValue()
+								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessScoreThreshold()
+								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessScoreThreshold()
+								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessConditions()
+								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessConditions()
 								);
 
 		HttpHeaders headers = new HttpHeaders();
