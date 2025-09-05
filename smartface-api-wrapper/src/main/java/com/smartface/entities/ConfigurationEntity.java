@@ -1,12 +1,11 @@
 package com.smartface.entities;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
 
 @Document(collection = "configurations")
 @Data
@@ -17,7 +16,7 @@ public class ConfigurationEntity {
     @Id
     private String name;
 
-    private List<ConfigItem> config;
+    private ConfigItem config;
 
     // ===== Inner Classes =====
 
@@ -28,10 +27,13 @@ public class ConfigurationEntity {
         private String _id;
 
         private FaceDetectorConfig faceDetectorConfig;
-        private MatchingThreshold matchingThresold; // (typo kept for consistency with your JSON)
+        private MatchingThreshold matchingThresold; // keep typo as in payload
         private SpoofDetectorConfig spoofDetectorConfig;
 
+        @JsonProperty("FaceDetectorResourceId")
         private ResourceConfig faceDetectorResourceId;
+
+        @JsonProperty("SpoofDetectorResourceIds")
         private ResourceConfig spoofDetectorResourceIds;
     }
 
@@ -39,7 +41,7 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RangeConfig {
-        private List<Integer> range;
+        private java.util.List<Integer> range;
         private int defaultValue;
         private int selectedValue;
     }
@@ -58,7 +60,7 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MatchingThreshold {
-        private List<Integer> range;
+        private java.util.List<Integer> range;
         private int defaultValue;
         private int selectedValue;
     }
@@ -77,7 +79,7 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ResourceConfig {
-        private List<String> values;
+        private java.util.List<String> values;
         private String defaultValue;
         private String selectedValue;
     }
