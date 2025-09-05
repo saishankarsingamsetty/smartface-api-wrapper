@@ -2,6 +2,8 @@ package com.smartface.controller;
 
 import com.smartface.entities.ConfigurationEntity;
 import com.smartface.service.ConfigurationService;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,11 +13,8 @@ import java.util.List;
 @RequestMapping("/configurations")
 public class ConfigurationController {
 
-    private final ConfigurationService service;
-
-    public ConfigurationController(ConfigurationService service) {
-        this.service = service;
-    }
+	@Autowired
+    private ConfigurationService service;
 
     // Insert or Update
     @PostMapping("/save")
@@ -38,5 +37,14 @@ public class ConfigurationController {
         }
         return ResponseEntity.notFound().build();
     }
+    
+    //delete the entity by name
+    @PostMapping("/delete/{name}")
+    public ResponseEntity<String> deleteById(@PathVariable String name) {
+        service.deleteById(name);
+        return ResponseEntity.ok("configuration "+name+" deleted successfully");
+    }
+    
+    
 }
 

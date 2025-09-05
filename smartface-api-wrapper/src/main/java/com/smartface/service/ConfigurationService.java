@@ -4,6 +4,8 @@ package com.smartface.service;
 
 import com.smartface.entities.ConfigurationEntity;
 import com.smartface.repository.ConfigurationRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,11 +13,8 @@ import java.util.List;
 @Service
 public class ConfigurationService {
 
-    private final ConfigurationRepository repository;
-
-    public ConfigurationService(ConfigurationRepository repository) {
-        this.repository = repository;
-    }
+	@Autowired
+    private ConfigurationRepository repository;
 
     public ConfigurationEntity save(ConfigurationEntity config) {
         return repository.save(config); // works for insert + update
@@ -27,6 +26,10 @@ public class ConfigurationService {
 
     public ConfigurationEntity getById(String name) {
         return repository.findById(name).orElse(null);
+    }
+    
+    public void deleteById(String name) {
+    	 repository.deleteById(name);
     }
 }
 
