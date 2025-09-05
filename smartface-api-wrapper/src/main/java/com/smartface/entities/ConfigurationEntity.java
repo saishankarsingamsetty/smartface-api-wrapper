@@ -1,11 +1,12 @@
 package com.smartface.entities;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.List;
 
 @Document(collection = "configurations")
 @Data
@@ -14,34 +15,21 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class ConfigurationEntity {
 
     @Id
-    private String name;
+    private String name; // unique camera name or config name
 
-    private ConfigItem config;
+    private FaceDetectorConfig faceDetectorConfig;
+    private MatchingThreshold matchingThreshold;
+    private SpoofDetectorConfig spoofDetectorConfig;
+    private ResourceConfig faceDetectorResource;
+    private ResourceConfig spoofDetectorResource;
 
-    // ===== Inner Classes =====
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ConfigItem {
-        private String _id;
-
-        private FaceDetectorConfig faceDetectorConfig;
-        private MatchingThreshold matchingThresold; // keep typo as in payload
-        private SpoofDetectorConfig spoofDetectorConfig;
-
-        @JsonProperty("FaceDetectorResourceId")
-        private ResourceConfig faceDetectorResourceId;
-
-        @JsonProperty("SpoofDetectorResourceIds")
-        private ResourceConfig spoofDetectorResourceIds;
-    }
+    // ===== Shared Inner Types =====
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class RangeConfig {
-        private java.util.List<Integer> range;
+        private List<Integer> range;
         private int defaultValue;
         private int selectedValue;
     }
@@ -60,7 +48,7 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MatchingThreshold {
-        private java.util.List<Integer> range;
+        private List<Integer> range;
         private int defaultValue;
         private int selectedValue;
     }
@@ -79,7 +67,7 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ResourceConfig {
-        private java.util.List<String> values;
+        private List<String> values;
         private String defaultValue;
         private String selectedValue;
     }

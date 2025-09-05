@@ -168,16 +168,16 @@ public class CameraService {
 						""".formatted(
 								dto.getName()
 								, dto.getSource()
-								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMinFaceSize().getSelectedValue()
-								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaceSize().getSelectedValue()
-								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaces().getSelectedValue()
-								,configEntity.getConfig().get(0).getFaceDetectorConfig().getConfidenceThreshold().getSelectedValue()
-								,configEntity.getConfig().get(0).getFaceDetectorResourceId().getSelectedValue()
-								,configEntity.getConfig().get(0).getSpoofDetectorResourceIds().getSelectedValue()
-								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessScoreThreshold()
-								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessScoreThreshold()
-								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessConditions()
-								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessConditions()
+//								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMinFaceSize().getSelectedValue()
+//								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaceSize().getSelectedValue()
+//								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaces().getSelectedValue()
+//								,configEntity.getConfig().get(0).getFaceDetectorConfig().getConfidenceThreshold().getSelectedValue()
+//								,configEntity.getConfig().get(0).getFaceDetectorResourceId().getSelectedValue()
+//								,configEntity.getConfig().get(0).getSpoofDetectorResourceIds().getSelectedValue()
+//								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessScoreThreshold()
+//								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessScoreThreshold()
+//								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessConditions()
+//								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessConditions()
 								);
 
 		HttpHeaders headers = new HttpHeaders();
