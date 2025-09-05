@@ -16,6 +16,7 @@ import com.smartface.application.SmartfaceProperties;
 import com.smartface.dto.CreateCameraDTO;
 import com.smartface.dto.UpdateCameraDTO;
 import com.smartface.entities.Camera;
+import com.smartface.entities.ConfigurationEntity;
 import com.smartface.exception.SmartfaceException;
 
 @Service
@@ -28,12 +29,22 @@ public class CameraService {
 
 	@Autowired
 	RestTemplate restTemplate;
+	
+	
+	@Autowired
+	ConfigurationService configurationService;
 
 	CameraService(SmartfaceApiWrapperApplication smartfaceApiWrapperApplication) {
 		this.smartfaceApiWrapperApplication = smartfaceApiWrapperApplication;
 	}
 
 	public String addCamera(CreateCameraDTO dto) {
+		
+		ConfigurationEntity configEntity = configurationService.getById(dto.getConfigurationName());
+		
+		if(configEntity==null) {
+			throw new SmartfaceException("configuration name should be in the list", HttpStatus.BAD_REQUEST.value());
+		}
 
 		String url = smartfaceProperties.getBaseurl() + "Cameras";
 
@@ -43,7 +54,7 @@ public class CameraService {
 				  "source": "%s",
 				  "enabled": true,
 				  "faceDetectorConfig": {
-				    "minFaceSize": 35,
+				    "minFaceSize": %s,
 				    "maxFaceSize": 600,
 				    "maxFaces": 20,
 				    "confidenceThreshold": 450
@@ -154,7 +165,11 @@ public class CameraService {
 				  }
 				}
 
-						""".formatted(dto.getName(), dto.getSource());
+						""".formatted(
+								dto.getName()
+								, dto.getSource()
+								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMinFaceSize().getSelectedValue()
+								);
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.valueOf("application/json-patch+json"));

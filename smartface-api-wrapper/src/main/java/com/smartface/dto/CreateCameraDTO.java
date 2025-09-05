@@ -7,4 +7,5 @@ public class CreateCameraDTO {
 
 	private String name;
 	private String source;
+	private String configurationName;
 }
