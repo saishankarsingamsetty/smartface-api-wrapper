@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.util.List;
 
 @Document(collection = "configurations")
@@ -24,14 +25,14 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ConfigItem {
-        private String _id; // will store $oid as string
+        private String _id;
+
         private FaceDetectorConfig faceDetectorConfig;
-        private MatchingThreshold matchingThresold; // kept as per payload spelling
+        private MatchingThreshold matchingThresold; // (typo kept for consistency with your JSON)
         private SpoofDetectorConfig spoofDetectorConfig;
-        private ResourceConfig FaceDetectorResourceId;
-        private ResourceConfig SpoofDetectorResourceIds;
-        private String defaultValue;
-        private String selectedValue;
+
+        private ResourceConfig faceDetectorResourceId;
+        private ResourceConfig spoofDetectorResourceIds;
     }
 
     @Data
@@ -76,9 +77,8 @@ public class ConfigurationEntity {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ResourceConfig {
-        private List<String> values; // FaceDetectorResourceId / SpoofDetectorResourceIds
+        private List<String> values;
         private String defaultValue;
         private String selectedValue;
     }
 }
-
