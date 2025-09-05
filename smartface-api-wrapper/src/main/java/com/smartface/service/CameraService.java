@@ -92,7 +92,7 @@ public class CameraService {
 				  "previewMaxDimension": 640,
 				  "serviceName": "",
 				  "spoofDetectorResourceIds": [
-				    "%s"
+				    "none"
 				  ],
 				  "palmSpoofDetectorResourceIds": [
 				    "none"
@@ -172,7 +172,6 @@ public class CameraService {
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaceSize().getSelectedValue()
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getMaxFaces().getSelectedValue()
 								,configEntity.getConfig().get(0).getFaceDetectorConfig().getConfidenceThreshold().getSelectedValue()
-								,configEntity.getConfig().get(0).getSpoofDetectorResourceIds().getSelectedValue()
 								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessScoreThreshold()
 								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getNearbyLivenessScoreThreshold()
 								,configEntity.getConfig().get(0).getSpoofDetectorConfig().getDistantLivenessConditions()
